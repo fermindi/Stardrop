@@ -26,6 +26,9 @@ namespace Stardrop.Models.SMAPI
         /// <summary>The unique mod ID.</summary>
         public string UniqueID { get; set; }
 
+        /// <summary>The DLL filename SMAPI loads for a code mod. Mutually exclusive with <see cref="Manifest.ContentPackFor"/>.</summary>
+        public string? EntryDll { get; set; }
+
         /// <summary>The mod which will read this as a content pack. Mutually exclusive with <see cref="Manifest.EntryDll"/>.</summary>
         //[JsonConverter(typeof(ManifestContentPackForConverter))]
         public ManifestContentPackFor ContentPackFor { get; set; }

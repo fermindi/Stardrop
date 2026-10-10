@@ -793,6 +793,8 @@ namespace Stardrop.ViewModels
                 }
             }
 
+            HealthReportService.QueueGenerate();
+
             if (Program.settings.ShowModThumbnails)
             {
                 UpdateThumbnails();

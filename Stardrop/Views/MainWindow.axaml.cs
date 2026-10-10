@@ -499,6 +499,9 @@ namespace Stardrop.Views
                 _viewModel.IsLocked = false;
                 _smapiProcessTimer.IsEnabled = false;
 
+                // The session that just ended left a fresh SMAPI log behind
+                HealthReportService.QueueGenerate();
+
                 this.WindowState = WindowState.Normal;
             }
         }

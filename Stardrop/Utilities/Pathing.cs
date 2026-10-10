@@ -76,6 +76,21 @@ namespace Stardrop.Utilities
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "StardewValley", "ErrorLogs");
         }
 
+        internal static string GetSmapiLatestLogPath()
+        {
+            return Path.Combine(GetSmapiLogFolderPath(), "SMAPI-latest.txt");
+        }
+
+        public static string GetReportsFolderPath()
+        {
+            return Path.Combine(defaultHomePath, "Reports");
+        }
+
+        public static string GetHealthReportPath()
+        {
+            return Path.Combine(GetReportsFolderPath(), "health-latest.json");
+        }
+
         public static string GetCacheFolderPath()
         {
             return Path.Combine(defaultHomePath, "Cache");

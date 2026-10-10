@@ -10,6 +10,7 @@ using Stardrop.Models;
 using Stardrop.Models.Nexus;
 using Stardrop.Models.Nexus.Web;
 using Stardrop.Utilities;
+using Stardrop.Utilities.Internal;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -46,6 +47,10 @@ namespace Stardrop
             public bool StartSmapi { get; set; }
             [Option("nxm", Required = false, HelpText = "Downloads the given NXM file from Nexus Mods.")]
             public string? NXMLink { get; set; }
+            [Option("health-report", Required = false, HelpText = "Writes the mod health report (health-latest.json) and exits without opening the window.")]
+            public bool HealthReport { get; set; }
+            [Option("game-folder", Required = false, HelpText = "Overrides the game folder for --health-report, for use before Stardrop has been set up.")]
+            public string? GameFolder { get; set; }
         }
 
         // Initialization code. Don't use any Avalonia, third-party APIs or any
@@ -59,6 +64,14 @@ namespace Stardrop
 
             // Establish file and folders paths
             Pathing.SetHomePath(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+
+            // A headless run, so it may sit alongside an open window and keeps a log of its own, as Helper clears the file it is given
+            if (args.Contains("--health-report"))
+            {
+                helper = new Helper("health", ".txt", Pathing.GetLogFolderPath());
+                RunHealthReport(args);
+                return;
+            }
 
             // Verify if another instance is already running
             if (Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName).Count() > 1 && RuntimeInformation.IsOSPlatform(OSPlatform.OSX) is false)
@@ -172,6 +185,39 @@ namespace Stardrop
             catch (Exception ex)
             {
                 helper.Log(ex, Helper.Status.Alert);
+            }
+        }
+
+        private static void RunHealthReport(string[] args)
+        {
+            try
+            {
+                string? gameFolder = null;
+                Parser.Default.ParseArguments<Options>(args).WithParsed<Options>(o => gameFolder = o.GameFolder);
+
+                if (File.Exists(Pathing.GetSettingsPath()))
+                {
+                    settings = JsonSerializer.Deserialize<Settings>(File.ReadAllText(Pathing.GetSettingsPath()), new JsonSerializerOptions { AllowTrailingCommas = true }) ?? new Settings();
+                }
+
+                if (String.IsNullOrEmpty(gameFolder) is false)
+                {
+                    Pathing.SetSmapiPath(gameFolder, true);
+                }
+                else
+                {
+                    Pathing.SetSmapiPath(settings.SMAPIFolderPath, String.IsNullOrEmpty(settings.ModFolderPath));
+                    Pathing.SetModPath(settings.ModFolderPath);
+                }
+
+                var report = HealthReportService.Build(Pathing.defaultGamePath, Pathing.defaultModPath, Pathing.GetSmapiLatestLogPath());
+                var path = HealthReportService.Write(report);
+                helper.Log($"Health report written to {path}: {report.ErrorCount} errors, {report.WarningCount} warnings, {report.InfoCount} notes");
+            }
+            catch (Exception ex)
+            {
+                helper.Log($"Failed to generate the health report: {ex}", Helper.Status.Alert);
+                Environment.ExitCode = 1;
             }
         }
 
